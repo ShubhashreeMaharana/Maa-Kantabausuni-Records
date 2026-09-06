@@ -25,10 +25,21 @@ export default function TrackPage() {
       <div className="text-sm text-gray-600 mb-4">Publisher: {track.publisher_p_line}</div>
 
       <div className="mb-4">
-        <audio controls src={track.file_url} className="w-full" />
+        {track.signed_url ? (
+          <audio controls src={track.signed_url} className="w-full" />
+        ) : (
+          <div className="text-sm text-red-500">Streaming unavailable</div>
+        )}
       </div>
 
-      <div className="text-sm text-gray-500">Validation status: {track.validation_status}</div>
+      <div className="text-sm text-gray-500 mb-4">Validation status: {track.validation_status}</div>
+
+      {track.price_cents > 0 ? (
+        <form action="/api/create-checkout-session" method="POST">
+          <input type="hidden" name="track_id" value={track.id} />
+          <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded">Buy for {track.price_cents / 100} INR</button>
+        </form>
+      ) : null}
     </div>
   );
 }

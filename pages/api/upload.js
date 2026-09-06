@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     try {
       const buffer = await fs.promises.readFile(file.path);
 
-      // Ensure bucket 'tracks' exists in your Supabase Storage
+      // Upload to Supabase Storage (recommended: private bucket)
       const { data, error: uploadErr } = await supabaseAdmin.storage.from('tracks').upload(destName, buffer, {
         contentType: file.headers && file.headers['content-type'] ? file.headers['content-type'] : undefined,
         upsert: false
@@ -48,7 +48,8 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'storage upload failed' });
       }
 
-      const publicUrl = supabaseAdmin.storage.from('tracks').getPublicUrl(destName).data.publicUrl;
+      // Do NOT expose public URL — we will generate signed URLs when streaming
+      const priceCents = fields.price_cents?.[0] ? parseInt(fields.price_cents[0], 10) : 0;
 
       // Insert track row into DB (tracks table)
       const trackRow = {
@@ -56,8 +57,8 @@ export default async function handler(req, res) {
         title: (fields.title && fields.title[0]) || originalName,
         artist_id: (fields.artist_id && fields.artist_id[0]) || null,
         file_path: destName,
-        file_url: publicUrl,
         publisher_p_line: P_LINE,
+        price_cents: priceCents,
         validation_status: 'pending',
         created_at: new Date().toISOString()
       };

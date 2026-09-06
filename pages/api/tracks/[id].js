@@ -9,5 +9,15 @@ export default async function handler(req, res) {
   const { data, error } = await supabaseAdmin.from('tracks').select('*').eq('id', id).single();
   if (error) return res.status(404).json({ error: 'not found' });
 
-  return res.status(200).json({ track: data });
+  // Generate a signed URL for streaming (1 hour expiry)
+  let signedUrl = null;
+  try {
+    const { data: signed, error: signErr } = await supabaseAdmin.storage.from('tracks').createSignedUrl(data.file_path, 60 * 60);
+    if (signErr) console.warn('signed url error', signErr);
+    else signedUrl = signed.signedURL;
+  } catch (e) {
+    console.warn('createSignedUrl failed', e.message);
+  }
+
+  return res.status(200).json({ track: { ...data, signed_url: signedUrl } });
 }
